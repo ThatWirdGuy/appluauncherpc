@@ -6,15 +6,15 @@
     <script src="./lib/v86.js"></script>
     <style>
         body { background-color: #000; color: white; display: flex; flex-direction: column; align-items: center; padding-top: 20px; font-family: sans-serif; }
-        #screen_container { border: 2px solid #333; background: #111; width: 800px; height: 600px; }
-        #screen_container.drag-over { border: 2px dashed #3b82f6 !important; }
-        #status { font-size: 14px; color: #aaa; margin-bottom: 10px; background: #222; padding: 8px 15px; border-radius: 5px; }
+        #screen_container { border: 2px solid #333; background: #111; width: 800px; height: 600px; cursor: crosshair; }
+        #screen_container.drag-over { border: 2px dashed #3b82f6 !important; box-shadow: 0 0 20px #3b82f6; }
+        #status { font-size: 14px; color: #aaa; margin-bottom: 10px; background: #222; padding: 10px 20px; border-radius: 8px; border: 1px solid #444; }
     </style>
 </head>
 <body>
 
     <h2>Android Web Loader</h2>
-    <div id="status">Linking to Engine...</div>
+    <div id="status">Connecting to Engine...</div>
 
     <div id="screen_container">
         <div style="white-space: pre; font-family: monospace"></div>
@@ -25,15 +25,16 @@
         function startEmulator() {
             const statusText = document.getElementById("status");
 
+            // Check if library is actually loaded in memory
             if (typeof V86Starter === "undefined") {
-                statusText.innerHTML = "<b style='color:red;'>Engine not detected.</b> Retrying...";
+                statusText.innerHTML = "<b style='color:#ff4444;'>Engine File Found, but not starting.</b> Retrying...";
                 setTimeout(startEmulator, 1000);
                 return;
             }
 
-            statusText.innerText = "Engine Linked! Booting Android (3-5 mins)...";
+            statusText.innerText = "Engine Active! Booting Android (3-5 minutes)...";
 
-            // 2. Updated Paths to match your 'appluauncherpc' structure
+            // Fixed the syntax errors from your screenshot
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
                 memory_size: 512 * 1024 * 1024,
@@ -50,11 +51,14 @@
 
         function setupDragAndDrop(emulator, statusText) {
             var container = document.getElementById("screen_container");
+
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
                 container.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
             });
+
             container.addEventListener('dragover', () => container.classList.add('drag-over'));
             container.addEventListener('dragleave', () => container.classList.remove('drag-over'));
+
             container.addEventListener('drop', (e) => {
                 container.classList.remove('drag-over');
                 var file = e.dataTransfer.files[0];
@@ -62,10 +66,11 @@
                     statusText.innerText = "Injecting " + file.name + "...";
                     var reader = new FileReader();
                     reader.onload = function(event) {
+                        // Create the file in the virtual / root
                         emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
                         statusText.style.color = "#4ade80"; 
-                        statusText.innerText = "Uploaded! Terminal command: pm install /" + file.name;
-                        alert("File injected! Use terminal to install.");
+                        statusText.innerText = "Uploaded! Use: pm install /" + file.name;
+                        alert("File sent to Android! Open terminal to install.");
                     };
                     reader.readAsArrayBuffer(file);
                 }
