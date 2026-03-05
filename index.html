@@ -5,42 +5,16 @@
     <title>APK Web Loader</title>
     <script src="./lib/v86.js"></script>
     <style>
-        body {
-            background-color: #000;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        #screen_container {
-            border: 2px solid #333;
-            background: #111;
-            transition: all 0.2s;
-            width: 800px;
-            height: 600px;
-            position: relative;
-        }
-        /* Visual feedback for dragging */
-        #screen_container.drag-over {
-            border: 2px dashed #3b82f6 !important;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-        }
-        #status {
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 10px;
-            background: #222;
-            padding: 8px 15px;
-            border-radius: 5px;
-        }
+        body { background-color: #000; color: white; display: flex; flex-direction: column; align-items: center; padding-top: 20px; font-family: sans-serif; }
+        #screen_container { border: 2px solid #333; background: #111; width: 800px; height: 600px; }
+        #screen_container.drag-over { border: 2px dashed #3b82f6 !important; }
+        #status { font-size: 14px; color: #aaa; margin-bottom: 10px; background: #222; padding: 5px 15px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <h2>Android Web Loader</h2>
-    <p id="status">Checking system files...</p>
+    <p id="status">Initializing...</p>
 
     <div id="screen_container">
         <div style="white-space: pre; font-family: monospace"></div>
@@ -48,17 +22,17 @@
     </div>
 
     <script>
-        // The Safety Loader: Ensures V86Starter is actually available
-        function startEmulator() {
+        window.onload = function() {
             const statusText = document.getElementById("status");
 
+            // Verify V86 is loaded
             if (typeof V86Starter === "undefined") {
-                statusText.innerHTML = "<b style='color:red;'>ERROR:</b> v86.js is not loading. Press <b>Ctrl + F5</b> in Opera GX.";
-                console.error("V86Starter not found. Checking path: ./lib/v86.js");
+                statusText.innerHTML = "<b style='color:red;'>Waiting for engine...</b> If this stays, press Ctrl+F5.";
+                setTimeout(window.onload, 1000);
                 return;
             }
 
-            statusText.innerText = "Booting Android (This can take 3-5 minutes)...";
+            statusText.innerText = "Engine Linked! Booting Android...";
 
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
@@ -66,22 +40,15 @@
                 vga_js: "./lib/vga.js",
                 bios: { url: "./roms/seabios.bin" },
                 vga_bios: { url: "./roms/vgabios.bin" },
-                cdrom: { url: "./roms/android.iso" }, // Updated to match your new filename
+                cdrom: { url: "./roms/android.iso" },
                 autostart: true,
                 screen_container: document.getElementById("screen_container"),
             });
 
-            setupDragAndDrop(emulator, statusText);
-        }
-
-        function setupDragAndDrop(emulator, statusText) {
+            // Drag and Drop Logic
             var container = document.getElementById("screen_container");
-
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                container.addEventListener(eventName, e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, false);
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+                container.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
             });
 
             container.addEventListener('dragover', () => container.classList.add('drag-over'));
@@ -90,23 +57,18 @@
             container.addEventListener('drop', (e) => {
                 container.classList.remove('drag-over');
                 var file = e.dataTransfer.files[0];
-                
                 if (file) {
                     statusText.innerText = "Injecting " + file.name + "...";
                     var reader = new FileReader();
                     reader.onload = function(event) {
                         emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
-                        statusText.style.color = "#4ade80"; 
-                        statusText.innerText = "Uploaded! Command: pm install /" + file.name;
-                        alert("File ready! Open Android Terminal and type: pm install /" + file.name);
+                        statusText.innerText = "Uploaded! Use 'pm install /" + file.name + "' in Terminal.";
+                        alert("File ready for installation!");
                     };
                     reader.readAsArrayBuffer(file);
                 }
             });
-        }
-
-        // Run when everything is finished loading
-        window.onload = startEmulator;
+        };
     </script>
 </body>
 </html>
