@@ -12,31 +12,35 @@
             flex-direction: column;
             align-items: center;
             padding-top: 20px;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         #screen_container {
             border: 2px solid #333;
             background: #111;
             transition: all 0.2s;
-            cursor: pointer;
+            width: 800px;
+            height: 600px;
+            position: relative;
         }
         /* Visual feedback for dragging */
         #screen_container.drag-over {
             border: 2px dashed #3b82f6 !important;
-            filter: brightness(1.2);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
         }
         #status {
             font-size: 14px;
             color: #aaa;
             margin-bottom: 10px;
-            text-align: center;
+            background: #222;
+            padding: 8px 15px;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
 
     <h2>Android Web Loader</h2>
-    <p id="status">Wait for "ANDROID" to finish booting, then drag an APK here.</p>
+    <p id="status">Checking system files...</p>
 
     <div id="screen_container">
         <div style="white-space: pre; font-family: monospace"></div>
@@ -44,30 +48,35 @@
     </div>
 
     <script>
-        // Use a small delay or check to ensure V86Starter exists
-        window.onload = function() {
+        // The Safety Loader: Ensures V86Starter is actually available
+        function startEmulator() {
+            const statusText = document.getElementById("status");
+
             if (typeof V86Starter === "undefined") {
-                document.getElementById("status").innerText = "Error: v86.js failed to load. Check your /lib/ folder.";
-                document.getElementById("status").style.color = "red";
+                statusText.innerHTML = "<b style='color:red;'>ERROR:</b> v86.js is not loading. Press <b>Ctrl + F5</b> in Opera GX.";
+                console.error("V86Starter not found. Checking path: ./lib/v86.js");
                 return;
             }
 
-            // 2. Initialize the Emulator
+            statusText.innerText = "Booting Android (This can take 3-5 minutes)...";
+
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
                 memory_size: 512 * 1024 * 1024,
                 vga_js: "./lib/vga.js",
                 bios: { url: "./roms/seabios.bin" },
                 vga_bios: { url: "./roms/vgabios.bin" },
-                cdrom: { url: "./roms/android-x86-1.6-r2.iso" },
+                cdrom: { url: "./roms/android.iso" }, // Updated to match your new filename
                 autostart: true,
                 screen_container: document.getElementById("screen_container"),
             });
 
-            var container = document.getElementById("screen_container");
-            var statusText = document.getElementById("status");
+            setupDragAndDrop(emulator, statusText);
+        }
 
-            // 3. Drag & Drop Logic
+        function setupDragAndDrop(emulator, statusText) {
+            var container = document.getElementById("screen_container");
+
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 container.addEventListener(eventName, e => {
                     e.preventDefault();
@@ -84,21 +93,20 @@
                 
                 if (file) {
                     statusText.innerText = "Injecting " + file.name + "...";
-                    
                     var reader = new FileReader();
                     reader.onload = function(event) {
-                        // Injects file into the emulator's root directory (/)
                         emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
-                        
                         statusText.style.color = "#4ade80"; 
-                        statusText.innerText = "Uploaded! Terminal command: pm install /" + file.name;
-                        
-                        console.log("File " + file.name + " has been injected into the VM.");
+                        statusText.innerText = "Uploaded! Command: pm install /" + file.name;
+                        alert("File ready! Open Android Terminal and type: pm install /" + file.name);
                     };
                     reader.readAsArrayBuffer(file);
                 }
             });
-        };
+        }
+
+        // Run when everything is finished loading
+        window.onload = startEmulator;
     </script>
 </body>
 </html>
