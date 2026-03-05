@@ -1,48 +1,97 @@
-<script>
-    window.onload = function() {
-        // 1. Initialize the Emulator
-        var emulator = new V86Starter({
-            wasm_path: "./lib/v86.wasm",
-            memory_size: 512 * 1024 * 1024,
-            vga_js: "./lib/vga.js",
-            bios: { url: "./roms/seabios.bin" },
-            vga_bios: { url: "./roms/vgabios.bin" },
-            cdrom: { url: "./roms/android-x86-1.6-r2.iso" },
-            autostart: true,
-            screen_container: document.getElementById("screen_container"),
-        });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>APK Web Loader</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="./lib/v86.js"></script>
 
-        var container = document.getElementById("screen_container");
-        var status = document.getElementById("status");
+    <style>
+        body {
+            background-color: #000;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            font-family: sans-serif;
+        }
+        #screen_container {
+            border: 2px solid #333;
+            background: #111;
+            transition: all 0.2s;
+        }
+        /* Visual feedback for dragging */
+        #screen_container.drag-over {
+            border: 2px dashed #3b82f6 !important;
+            filter: brightness(1.2);
+        }
+    </style>
+</head>
+<body>
 
-        // 2. Drag & Drop Handlers
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            container.addEventListener(eventName, e => {
-                e.preventDefault();
-                e.stopPropagation();
-            }, false);
-        });
+    <h2>Android Web Loader</h2>
+    <p id="status" style="font-size: 14px; color: #aaa; margin-bottom: 10px;">
+        Wait for "ANDROID" to finish booting, then drag an APK here.
+    </p>
 
-        container.addEventListener('dragover', () => container.style.borderColor = "#3b82f6");
-        container.addEventListener('dragleave', () => container.style.borderColor = "#333");
+    <div id="screen_container">
+        <div style="white-space: pre; font-family: monospace"></div>
+        <canvas></canvas>
+    </div>
 
-        // 3. The "Load APK" Logic
-        container.addEventListener('drop', (e) => {
-            container.style.borderColor = "#333";
-            var file = e.dataTransfer.files[0];
-            
-            if (file) {
-                status.innerText = "Uploading " + file.name + " to Android...";
+    <script>
+        window.onload = function() {
+            // 2. Initialize the Emulator
+            var emulator = new V86Starter({
+                wasm_path: "./lib/v86.wasm",
+                memory_size: 512 * 1024 * 1024,
+                vga_js: "./lib/vga.js",
+                bios: { url: "./roms/seabios.bin" },
+                vga_bios: { url: "./roms/vgabios.bin" },
+                cdrom: { url: "./roms/android-x86-1.6-r2.iso" },
+                autostart: true,
+                screen_container: document.getElementById("screen_container"),
+            });
+
+            var container = document.getElementById("screen_container");
+            var statusText = document.getElementById("status");
+
+            // 3. Prevent browser from opening the file normally
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                container.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            // 4. Highlight container when dragging over
+            container.addEventListener('dragover', () => container.classList.add('drag-over'));
+            container.addEventListener('dragleave', () => container.classList.remove('drag-over'));
+
+            // 5. Handle the dropped APK file
+            container.addEventListener('drop', (e) => {
+                container.classList.remove('drag-over');
+                var file = e.dataTransfer.files[0];
                 
-                var reader = new FileReader();
-                reader.onload = function(event) {
-                    // This command injects the file into the virtual system's root folder
-                    emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
-                    status.innerText = "File " + file.name + " ready! Use Terminal to install.";
-                    alert("Uploaded! Use Android Terminal to install: pm install /" + file.name);
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        });
-    };
-</script>
+                if (file) {
+                    statusText.innerText = "Uploading " + file.name + "...";
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(event) {
+                        // Injects file into the emulator's root directory (/)
+                        emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
+                        
+                        statusText.style.color = "#4ade80"; // Success Green
+                        statusText.innerText = "Ready! Type: pm install /" + file.name;
+                        
+                        alert("File injected!\n\nOnce Android boots, open Terminal and type:\npm install /" + file.name);
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
