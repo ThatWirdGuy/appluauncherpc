@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>APK Web Loader</title>
-    <link rel="stylesheet" href="style.css">
-    
     <script src="./lib/v86.js"></script>
-
     <style>
         body {
             background-color: #000;
@@ -21,20 +18,25 @@
             border: 2px solid #333;
             background: #111;
             transition: all 0.2s;
+            cursor: pointer;
         }
         /* Visual feedback for dragging */
         #screen_container.drag-over {
             border: 2px dashed #3b82f6 !important;
             filter: brightness(1.2);
         }
+        #status {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
     <h2>Android Web Loader</h2>
-    <p id="status" style="font-size: 14px; color: #aaa; margin-bottom: 10px;">
-        Wait for "ANDROID" to finish booting, then drag an APK here.
-    </p>
+    <p id="status">Wait for "ANDROID" to finish booting, then drag an APK here.</p>
 
     <div id="screen_container">
         <div style="white-space: pre; font-family: monospace"></div>
@@ -42,7 +44,14 @@
     </div>
 
     <script>
+        // Use a small delay or check to ensure V86Starter exists
         window.onload = function() {
+            if (typeof V86Starter === "undefined") {
+                document.getElementById("status").innerText = "Error: v86.js failed to load. Check your /lib/ folder.";
+                document.getElementById("status").style.color = "red";
+                return;
+            }
+
             // 2. Initialize the Emulator
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
@@ -58,7 +67,7 @@
             var container = document.getElementById("screen_container");
             var statusText = document.getElementById("status");
 
-            // 3. Prevent browser from opening the file normally
+            // 3. Drag & Drop Logic
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 container.addEventListener(eventName, e => {
                     e.preventDefault();
@@ -66,27 +75,25 @@
                 }, false);
             });
 
-            // 4. Highlight container when dragging over
             container.addEventListener('dragover', () => container.classList.add('drag-over'));
             container.addEventListener('dragleave', () => container.classList.remove('drag-over'));
 
-            // 5. Handle the dropped APK file
             container.addEventListener('drop', (e) => {
                 container.classList.remove('drag-over');
                 var file = e.dataTransfer.files[0];
                 
                 if (file) {
-                    statusText.innerText = "Uploading " + file.name + "...";
+                    statusText.innerText = "Injecting " + file.name + "...";
                     
                     var reader = new FileReader();
                     reader.onload = function(event) {
                         // Injects file into the emulator's root directory (/)
                         emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
                         
-                        statusText.style.color = "#4ade80"; // Success Green
-                        statusText.innerText = "Ready! Type: pm install /" + file.name;
+                        statusText.style.color = "#4ade80"; 
+                        statusText.innerText = "Uploaded! Terminal command: pm install /" + file.name;
                         
-                        alert("File injected!\n\nOnce Android boots, open Terminal and type:\npm install /" + file.name);
+                        console.log("File " + file.name + " has been injected into the VM.");
                     };
                     reader.readAsArrayBuffer(file);
                 }
