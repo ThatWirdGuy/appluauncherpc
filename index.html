@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <title>Android Web Loader</title>
 
-<script src="./lib/v86.js"></script>
+<script src="lib/v86.js"></script>
 
 <style>
 body{
     background:#000;
-    color:#fff;
+    color:white;
     display:flex;
     flex-direction:column;
     align-items:center;
-    font-family:sans-serif;
     padding-top:20px;
+    font-family:sans-serif;
 }
 
 #screen_container{
@@ -22,20 +22,22 @@ body{
     background:#111;
     width:800px;
     height:600px;
+    cursor:crosshair;
 }
 
-#screen_container.drag{
+#screen_container.drag-over{
     border:2px dashed #3b82f6;
-    box-shadow:0 0 15px #3b82f6;
+    box-shadow:0 0 20px #3b82f6;
 }
 
 #status{
-    margin-bottom:12px;
+    font-size:14px;
+    color:#aaa;
+    margin-bottom:10px;
     background:#222;
     padding:10px 20px;
-    border-radius:6px;
+    border-radius:8px;
     border:1px solid #444;
-    font-size:14px;
 }
 </style>
 </head>
@@ -43,10 +45,13 @@ body{
 <body>
 
 <h2>Android Web Loader</h2>
+
 <div id="status">Connecting to engine...</div>
 
+<!-- REQUIRED structure for v86 -->
 <div id="screen_container">
-    <canvas id="screen"></canvas>
+    <div style="white-space: pre; font-family: monospace;"></div>
+    <canvas style="display:none"></canvas>
 </div>
 
 <script>
@@ -56,55 +61,55 @@ function startEmulator(){
     const status = document.getElementById("status");
 
     if(typeof V86Starter === "undefined"){
-        status.innerHTML = "<span style='color:red'>Engine not ready. Retrying...</span>";
+        status.innerHTML="<b style='color:#ff4444'>Engine not ready. Retrying...</b>";
         setTimeout(startEmulator,1000);
         return;
     }
 
-    status.innerText = "Engine active. Booting Android (1-3 minutes)...";
+    status.innerText="Engine active. Booting Android (1-3 minutes)...";
 
     const emulator = new V86Starter({
 
-        wasm_path:"./lib/v86.wasm",
+        wasm_path:"lib/v86.wasm",
 
-        memory_size:256*1024*1024,
-        vga_memory_size:16*1024*1024,
+        memory_size:128*1024*1024,
+        vga_memory_size:8*1024*1024,
 
         screen_container:document.getElementById("screen_container"),
 
-        bios:{url:"./roms/seabios.bin"},
-        vga_bios:{url:"./roms/vgabios.bin"},
+        bios:{url:"roms/seabios.bin"},
+        vga_bios:{url:"roms/vgabios.bin"},
 
-        cdrom:{url:"./roms/android.iso"},
+        cdrom:{url:"roms/android.iso"},
 
         autostart:true
     });
 
-    setupDragDrop(emulator,status);
+    setupDragAndDrop(emulator,status);
 }
 
-function setupDragDrop(emulator,status){
+function setupDragAndDrop(emulator,status){
 
     const container=document.getElementById("screen_container");
 
-    ["dragenter","dragover","dragleave","drop"].forEach(e=>{
-        container.addEventListener(e,function(ev){
-            ev.preventDefault();
-            ev.stopPropagation();
+    ["dragenter","dragover","dragleave","drop"].forEach(evt=>{
+        container.addEventListener(evt,function(e){
+            e.preventDefault();
+            e.stopPropagation();
         });
     });
 
     container.addEventListener("dragover",()=>{
-        container.classList.add("drag");
+        container.classList.add("drag-over");
     });
 
     container.addEventListener("dragleave",()=>{
-        container.classList.remove("drag");
+        container.classList.remove("drag-over");
     });
 
     container.addEventListener("drop",(e)=>{
 
-        container.classList.remove("drag");
+        container.classList.remove("drag-over");
 
         const file=e.dataTransfer.files[0];
         if(!file)return;
@@ -113,18 +118,17 @@ function setupDragDrop(emulator,status){
 
         const reader=new FileReader();
 
-        reader.onload=function(ev){
+        reader.onload=function(event){
 
             emulator.create_file(
                 "/"+file.name,
-                new Uint8Array(ev.target.result)
+                new Uint8Array(event.target.result)
             );
 
             status.style.color="#4ade80";
-            status.innerText="Upload complete: "+file.name+
-            " | Install using: pm install /"+file.name;
+            status.innerText="Uploaded! Install with: pm install /"+file.name;
 
-            alert("File uploaded to Android virtual filesystem.");
+            alert("File uploaded. Install inside Android terminal.");
         };
 
         reader.readAsArrayBuffer(file);
