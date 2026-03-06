@@ -25,7 +25,7 @@
         function startEmulator() {
             const statusText = document.getElementById("status");
 
-            // Safety check: verify V86Starter is ready in browser memory
+            // Safety check: verify V86Starter is ready in memory
             if (typeof V86Starter === "undefined") {
                 statusText.innerHTML = "<b style='color:#ff4444;'>Engine linked but not starting.</b> Retrying...";
                 setTimeout(startEmulator, 1000);
@@ -34,7 +34,7 @@
 
             statusText.innerText = "Engine Active! Booting Android (3-5 minutes)...";
 
-            // Fixed broken syntax (or = new, ath:, _size:) from image_133ade.png
+            // FIXED: No more 'or = new' or 'ath:' typos
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
                 memory_size: 512 * 1024 * 1024,
@@ -51,14 +51,11 @@
 
         function setupDragAndDrop(emulator, statusText) {
             var container = document.getElementById("screen_container");
-
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
                 container.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
             });
-
             container.addEventListener('dragover', () => container.classList.add('drag-over'));
             container.addEventListener('dragleave', () => container.classList.remove('drag-over'));
-
             container.addEventListener('drop', (e) => {
                 container.classList.remove('drag-over');
                 var file = e.dataTransfer.files[0];
@@ -69,7 +66,7 @@
                         emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
                         statusText.style.color = "#4ade80"; 
                         statusText.innerText = "Uploaded! Use command: pm install /" + file.name;
-                        alert("File ready! Once Android boots, use the Terminal to install.");
+                        alert("File ready! Use Terminal to install once booted.");
                     };
                     reader.readAsArrayBuffer(file);
                 }
