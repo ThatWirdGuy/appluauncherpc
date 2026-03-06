@@ -1,82 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Android Web Loader</title>
-    <script src="./lib/v86.js"></script>
-    <style>
-        body { background-color: #000; color: white; display: flex; flex-direction: column; align-items: center; padding-top: 20px; font-family: sans-serif; }
-        #screen_container { border: 2px solid #333; background: #111; width: 800px; height: 600px; cursor: crosshair; }
-        #screen_container.drag-over { border: 2px dashed #3b82f6 !important; box-shadow: 0 0 20px #3b82f6; }
-        #status { font-size: 14px; color: #aaa; margin-bottom: 10px; background: #222; padding: 10px 20px; border-radius: 8px; border: 1px solid #444; }
-    </style>
+<meta charset="UTF-8">
+<title>Android Web Loader</title>
+
+<script src="lib/v86.js"></script>
+
+<style>
+body {
+    background:#000;
+    color:white;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:20px;
+    font-family:sans-serif;
+}
+
+#screen_container{
+    border:2px solid #333;
+    background:#111;
+    width:800px;
+    height:600px;
+    cursor:crosshair;
+}
+
+#screen_container.drag-over{
+    border:2px dashed #3b82f6!important;
+    box-shadow:0 0 20px #3b82f6;
+}
+
+#status{
+    font-size:14px;
+    color:#aaa;
+    margin-bottom:10px;
+    background:#222;
+    padding:10px 20px;
+    border-radius:8px;
+    border:1px solid #444;
+}
+</style>
 </head>
+
 <body>
 
-    <h2>Android Web Loader</h2>
-    <div id="status">Connecting to Engine...</div>
+<h2>Android Web Loader</h2>
+<div id="status">Connecting to Engine...</div>
 
-    <div id="screen_container">
-        <div style="white-space: pre; font-family: monospace"></div>
-        <canvas></canvas>
-    </div>
+<div id="screen_container">
+<div style="white-space:pre;font-family:monospace"></div>
+<canvas></canvas>
+</div>
 
-    <script>
-        function startEmulator() {
-            const statusText = document.getElementById("status");
+<script>
 
-            // Check if library is successfully loaded in browser memory
-            if (typeof V86Starter === "undefined") {
-                statusText.innerHTML = "<b style='color:#ff4444;'>Engine linked but not starting.</b> Retrying...";
-                setTimeout(startEmulator, 1000);
-                return;
-            }
+function startEmulator(){
 
-            statusText.innerText = "Engine Active! Booting Android (3-5 minutes)...";
+    const statusText = document.getElementById("status");
 
-            // FIXED: Replaced typos like 'or = new' and 'ath:' with correct syntax
-            var emulator = new V86Starter({
-                wasm_path: "./lib/v86.wasm",
-                memory_size: 512 * 1024 * 1024,
-                vga_js: "./lib/vga.js",
-                bios: { url: "./roms/seabios.bin" },
-                vga_bios: { url: "./roms/vgabios.bin" },
-                cdrom: { url: "./roms/android.iso" }, 
-                autostart: true,
-                screen_container: document.getElementById("screen_container"),
-            });
+    if(typeof V86Starter === "undefined"){
+        statusText.innerHTML="<b style='color:#ff4444;'>Engine linked but not starting.</b> Retrying...";
+        setTimeout(startEmulator,1000);
+        return;
+    }
 
-            setupDragAndDrop(emulator, statusText);
+    statusText.innerText="Engine Active! Booting Android (3-5 minutes)...";
+
+    var emulator = new V86Starter({
+
+        wasm_path: "lib/v86.wasm",
+        memory_size: 512 * 1024 * 1024,
+
+        vga_js: "lib/vga.js",
+
+        bios: { url: "roms/seabios.bin" },
+        vga_bios: { url: "roms/vgabios.bin" },
+
+        cdrom: { url: "roms/android.iso" },
+
+        autostart:true,
+
+        screen_container: document.getElementById("screen_container"),
+    });
+
+    setupDragAndDrop(emulator,statusText);
+}
+
+function setupDragAndDrop(emulator,statusText){
+
+    var container=document.getElementById("screen_container");
+
+    ['dragenter','dragover','dragleave','drop'].forEach(evt=>{
+        container.addEventListener(evt,e=>{
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    container.addEventListener('dragover',()=>{
+        container.classList.add('drag-over');
+    });
+
+    container.addEventListener('dragleave',()=>{
+        container.classList.remove('drag-over');
+    });
+
+    container.addEventListener('drop',(e)=>{
+
+        container.classList.remove('drag-over');
+
+        var file=e.dataTransfer.files[0];
+
+        if(file){
+
+            statusText.innerText="Injecting "+file.name+"...";
+
+            var reader=new FileReader();
+
+            reader.onload=function(event){
+
+                emulator.create_file("/"+file.name,new Uint8Array(event.target.result));
+
+                statusText.style.color="#4ade80";
+                statusText.innerText="Uploaded! Use: pm install /"+file.name;
+
+                alert("File sent! Install via terminal after Android boots.");
+            };
+
+            reader.readAsArrayBuffer(file);
         }
+    });
+}
 
-        function setupDragAndDrop(emulator, statusText) {
-            var container = document.getElementById("screen_container");
+window.onload=startEmulator;
 
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
-                container.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
-            });
+</script>
 
-            container.addEventListener('dragover', () => container.classList.add('drag-over'));
-            container.addEventListener('dragleave', () => container.classList.remove('drag-over'));
-
-            container.addEventListener('drop', (e) => {
-                container.classList.remove('drag-over');
-                var file = e.dataTransfer.files[0];
-                if (file) {
-                    statusText.innerText = "Injecting " + file.name + "...";
-                    var reader = new FileReader();
-                    reader.onload = function(event) {
-                        emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
-                        statusText.style.color = "#4ade80"; 
-                        statusText.innerText = "Uploaded! Use command: pm install /" + file.name;
-                        alert("File sent to Android! Open terminal to install once it boots.");
-                    };
-                    reader.readAsArrayBuffer(file);
-                }
-            });
-        }
-
-        window.onload = startEmulator;
-    </script>
 </body>
 </html>
