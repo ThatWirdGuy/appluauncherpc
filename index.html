@@ -1,136 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Android Web Loader</title>
-
-<script src="./lib/v86.js"></script>
-
-<style>
-body{
-    background:#000;
-    color:white;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding-top:20px;
-    font-family:sans-serif;
-}
-
-#screen_container{
-    border:2px solid #333;
-    background:#111;
-    width:800px;
-    height:600px;
-    cursor:crosshair;
-}
-
-#screen_container.drag-over{
-    border:2px dashed #3b82f6!important;
-    box-shadow:0 0 20px #3b82f6;
-}
-
-#status{
-    font-size:14px;
-    color:#aaa;
-    margin-bottom:10px;
-    background:#222;
-    padding:10px 20px;
-    border-radius:8px;
-    border:1px solid #444;
-}
-</style>
-</head>
-
-<body>
-
-<h2>Android Web Loader</h2>
-<div id="status">Loading Engine...</div>
-
-<div id="screen_container"></div>
+<script src="lib/v86.js"></script>
 
 <script>
+window.addEventListener("load", () => {
 
-window.addEventListener("load", startEmulator);
+    const status = document.getElementById("status");
 
-function startEmulator(){
-
-    const statusText = document.getElementById("status");
-
-    if(typeof V86Starter === "undefined"){
-        statusText.innerHTML="<b style='color:red;'>v86 engine failed to load</b>";
+    if (!window.V86Starter) {
+        status.innerHTML = "❌ v86 engine failed to load";
+        console.error("v86.js failed to load");
         return;
     }
 
-    statusText.innerText="Engine Active! Booting Android...";
+    status.innerHTML = "✅ Engine Loaded. Booting...";
 
-    const emulator = new V86Starter({
-
-        wasm_path: "./lib/v86.wasm",
-        vga_js: "./lib/vga.js",
+    new V86Starter({
+        wasm_path: "lib/v86.wasm",
+        vga_js: "lib/vga.js",
 
         memory_size: 512 * 1024 * 1024,
 
-        bios: { url: "./roms/seabios.bin" },
-        vga_bios: { url: "./roms/vgabios.bin" },
-
-        cdrom: { url: "./roms/android.iso" },
-
-        autostart: true,
-
         screen_container: document.getElementById("screen_container"),
+
+        bios: { url: "roms/seabios.bin" },
+        vga_bios: { url: "roms/vgabios.bin" },
+        cdrom: { url: "roms/android.iso" },
+
+        autostart: true
     });
 
-    setupDragAndDrop(emulator,statusText);
-}
-
-function setupDragAndDrop(emulator,statusText){
-
-    const container=document.getElementById("screen_container");
-
-    ["dragenter","dragover","dragleave","drop"].forEach(evt=>{
-        container.addEventListener(evt,e=>{
-            e.preventDefault();
-            e.stopPropagation();
-        });
-    });
-
-    container.addEventListener("dragover",()=>{
-        container.classList.add("drag-over");
-    });
-
-    container.addEventListener("dragleave",()=>{
-        container.classList.remove("drag-over");
-    });
-
-    container.addEventListener("drop",(e)=>{
-
-        container.classList.remove("drag-over");
-
-        const file=e.dataTransfer.files[0];
-
-        if(file){
-
-            statusText.innerText="Uploading "+file.name+"...";
-
-            const reader=new FileReader();
-
-            reader.onload=function(event){
-
-                emulator.create_file("/"+file.name,new Uint8Array(event.target.result));
-
-                statusText.style.color="#4ade80";
-                statusText.innerText="Uploaded! Install with: pm install /"+file.name;
-
-                alert("File uploaded to emulator filesystem.");
-            };
-
-            reader.readAsArrayBuffer(file);
-        }
-    });
-}
-
+});
 </script>
-
-</body>
-</html>
