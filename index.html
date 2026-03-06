@@ -25,7 +25,7 @@
         function startEmulator() {
             const statusText = document.getElementById("status");
 
-            // Safety check: verify V86Starter is ready in browser memory
+            // Check if V86 library is loaded in the browser
             if (typeof V86Starter === "undefined") {
                 statusText.innerHTML = "<b style='color:#ff4444;'>Engine linked but not starting.</b> Retrying...";
                 setTimeout(startEmulator, 1000);
@@ -34,7 +34,7 @@
 
             statusText.innerText = "Engine Active! Booting Android (3-5 minutes)...";
 
-            // Fixed broken syntax (or = new, ath:, _size:) from image_133ade.png
+            // Fixed the syntax errors from your screenshot (image_133ade.png)
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
                 memory_size: 512 * 1024 * 1024,
@@ -66,10 +66,11 @@
                     statusText.innerText = "Injecting " + file.name + "...";
                     var reader = new FileReader();
                     reader.onload = function(event) {
+                        // Creates the file in the virtual Android system
                         emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
                         statusText.style.color = "#4ade80"; 
                         statusText.innerText = "Uploaded! Use command: pm install /" + file.name;
-                        alert("File ready! Once Android boots, use the Terminal to install.");
+                        alert("File sent! Once Android boots, use Terminal to install.");
                     };
                     reader.readAsArrayBuffer(file);
                 }
