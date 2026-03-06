@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <title>Android Web Loader</title>
 
-<script src="lib/v86.js"></script>
+<script src="./lib/v86.js"></script>
 
 <style>
-body {
+body{
     background:#000;
     color:white;
     display:flex;
@@ -45,40 +45,38 @@ body {
 <body>
 
 <h2>Android Web Loader</h2>
-<div id="status">Connecting to Engine...</div>
+<div id="status">Loading Engine...</div>
 
-<div id="screen_container">
-<div style="white-space:pre;font-family:monospace"></div>
-<canvas></canvas>
-</div>
+<div id="screen_container"></div>
 
 <script>
+
+window.addEventListener("load", startEmulator);
 
 function startEmulator(){
 
     const statusText = document.getElementById("status");
 
     if(typeof V86Starter === "undefined"){
-        statusText.innerHTML="<b style='color:#ff4444;'>Engine linked but not starting.</b> Retrying...";
-        setTimeout(startEmulator,1000);
+        statusText.innerHTML="<b style='color:red;'>v86 engine failed to load</b>";
         return;
     }
 
-    statusText.innerText="Engine Active! Booting Android (3-5 minutes)...";
+    statusText.innerText="Engine Active! Booting Android...";
 
-    var emulator = new V86Starter({
+    const emulator = new V86Starter({
 
-        wasm_path: "lib/v86.wasm",
+        wasm_path: "./lib/v86.wasm",
+        vga_js: "./lib/vga.js",
+
         memory_size: 512 * 1024 * 1024,
 
-        vga_js: "lib/vga.js",
+        bios: { url: "./roms/seabios.bin" },
+        vga_bios: { url: "./roms/vgabios.bin" },
 
-        bios: { url: "roms/seabios.bin" },
-        vga_bios: { url: "roms/vgabios.bin" },
+        cdrom: { url: "./roms/android.iso" },
 
-        cdrom: { url: "roms/android.iso" },
-
-        autostart:true,
+        autostart: true,
 
         screen_container: document.getElementById("screen_container"),
     });
@@ -88,51 +86,49 @@ function startEmulator(){
 
 function setupDragAndDrop(emulator,statusText){
 
-    var container=document.getElementById("screen_container");
+    const container=document.getElementById("screen_container");
 
-    ['dragenter','dragover','dragleave','drop'].forEach(evt=>{
+    ["dragenter","dragover","dragleave","drop"].forEach(evt=>{
         container.addEventListener(evt,e=>{
             e.preventDefault();
             e.stopPropagation();
         });
     });
 
-    container.addEventListener('dragover',()=>{
-        container.classList.add('drag-over');
+    container.addEventListener("dragover",()=>{
+        container.classList.add("drag-over");
     });
 
-    container.addEventListener('dragleave',()=>{
-        container.classList.remove('drag-over');
+    container.addEventListener("dragleave",()=>{
+        container.classList.remove("drag-over");
     });
 
-    container.addEventListener('drop',(e)=>{
+    container.addEventListener("drop",(e)=>{
 
-        container.classList.remove('drag-over');
+        container.classList.remove("drag-over");
 
-        var file=e.dataTransfer.files[0];
+        const file=e.dataTransfer.files[0];
 
         if(file){
 
-            statusText.innerText="Injecting "+file.name+"...";
+            statusText.innerText="Uploading "+file.name+"...";
 
-            var reader=new FileReader();
+            const reader=new FileReader();
 
             reader.onload=function(event){
 
                 emulator.create_file("/"+file.name,new Uint8Array(event.target.result));
 
                 statusText.style.color="#4ade80";
-                statusText.innerText="Uploaded! Use: pm install /"+file.name;
+                statusText.innerText="Uploaded! Install with: pm install /"+file.name;
 
-                alert("File sent! Install via terminal after Android boots.");
+                alert("File uploaded to emulator filesystem.");
             };
 
             reader.readAsArrayBuffer(file);
         }
     });
 }
-
-window.onload=startEmulator;
 
 </script>
 
