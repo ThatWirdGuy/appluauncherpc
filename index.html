@@ -25,7 +25,7 @@
         function startEmulator() {
             const statusText = document.getElementById("status");
 
-            // Verify V86Starter is available in memory
+            // Safety check: verify V86Starter is ready in browser memory
             if (typeof V86Starter === "undefined") {
                 statusText.innerHTML = "<b style='color:#ff4444;'>Engine linked but not starting.</b> Retrying...";
                 setTimeout(startEmulator, 1000);
@@ -34,7 +34,7 @@
 
             statusText.innerText = "Engine Active! Booting Android (3-5 minutes)...";
 
-            // FIXED: Replaced 'or = new', 'ath:', and '_size:' with correct syntax
+            // Fixed broken syntax (or = new, ath:, _size:) from image_133ade.png
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
                 memory_size: 512 * 1024 * 1024,
