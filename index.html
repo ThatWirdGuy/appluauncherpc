@@ -1,36 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Android Loader</title>
+
 <script src="lib/v86.js"></script>
 
+<style>
+body{
+background:black;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+#screen_container{
+width:800px;
+height:600px;
+border:2px solid #444;
+margin:auto;
+}
+
+#status{
+margin:10px;
+color:#aaa;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Android Web Loader</h2>
+
+<div id="status">Loading engine...</div>
+
+<div id="screen_container"></div>
+
 <script>
-document.addEventListener("DOMContentLoaded", function(){
 
-    const status = document.getElementById("status");
+document.addEventListener("DOMContentLoaded",function(){
 
-    if (!status){
-        console.error("Status element not found");
-        return;
-    }
+const status = document.getElementById("status");
 
-    if (!window.V86Starter){
-        status.innerHTML = "❌ Engine failed to load";
-        return;
-    }
+if(!window.V86Starter){
+status.innerHTML="Engine failed to load";
+return;
+}
 
-    status.innerHTML = "✅ Engine Loaded. Booting Android...";
+status.innerHTML="Engine loaded. Booting...";
 
-    new V86Starter({
-        wasm_path: "lib/v86.wasm",
-        vga_js: "lib/vga.js",
+new V86Starter({
 
-        memory_size: 512 * 1024 * 1024,
+wasm_path:"lib/v86.wasm",
+vga_js:"lib/vga.js",
 
-        screen_container: document.getElementById("screen_container"),
+memory_size:512*1024*1024,
 
-        bios: { url: "roms/seabios.bin" },
-        vga_bios: { url: "roms/vgabios.bin" },
-        cdrom: { url: "roms/android.iso" },
+screen_container:document.getElementById("screen_container"),
 
-        autostart: true
-    });
+bios:{url:"roms/seabios.bin"},
+vga_bios:{url:"roms/vgabios.bin"},
+cdrom:{url:"roms/android.iso"},
+
+autostart:true
 
 });
+
+});
+
 </script>
+
+</body>
+</html>
