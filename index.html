@@ -1,17 +1,21 @@
 <script src="lib/v86.js"></script>
 
 <script>
-window.addEventListener("load", () => {
+document.addEventListener("DOMContentLoaded", function(){
 
     const status = document.getElementById("status");
 
-    if (!window.V86Starter) {
-        status.innerHTML = "❌ v86 engine failed to load";
-        console.error("v86.js failed to load");
+    if (!status){
+        console.error("Status element not found");
         return;
     }
 
-    status.innerHTML = "✅ Engine Loaded. Booting...";
+    if (!window.V86Starter){
+        status.innerHTML = "❌ Engine failed to load";
+        return;
+    }
+
+    status.innerHTML = "✅ Engine Loaded. Booting Android...";
 
     new V86Starter({
         wasm_path: "lib/v86.wasm",
