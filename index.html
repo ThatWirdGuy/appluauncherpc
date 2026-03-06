@@ -25,16 +25,16 @@
         function startEmulator() {
             const statusText = document.getElementById("status");
 
-            // Check if library is actually loaded in memory
+            // Safety check to ensure V86Starter is ready in memory
             if (typeof V86Starter === "undefined") {
-                statusText.innerHTML = "<b style='color:#ff4444;'>Engine File Found, but not starting.</b> Retrying...";
+                statusText.innerHTML = "<b style='color:#ff4444;'>Engine linked but not starting.</b> Retrying...";
                 setTimeout(startEmulator, 1000);
                 return;
             }
 
             statusText.innerText = "Engine Active! Booting Android (3-5 minutes)...";
 
-            // Fixed the syntax errors from your screenshot
+            // Fixed the syntax errors found in your screenshot
             var emulator = new V86Starter({
                 wasm_path: "./lib/v86.wasm",
                 memory_size: 512 * 1024 * 1024,
@@ -52,6 +52,7 @@
         function setupDragAndDrop(emulator, statusText) {
             var container = document.getElementById("screen_container");
 
+            // Prevent browser from opening dropped files
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
                 container.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
             });
@@ -66,11 +67,11 @@
                     statusText.innerText = "Injecting " + file.name + "...";
                     var reader = new FileReader();
                     reader.onload = function(event) {
-                        // Create the file in the virtual / root
+                        // Creates the file in the virtual Android system
                         emulator.create_file("/" + file.name, new Uint8Array(event.target.result));
                         statusText.style.color = "#4ade80"; 
-                        statusText.innerText = "Uploaded! Use: pm install /" + file.name;
-                        alert("File sent to Android! Open terminal to install.");
+                        statusText.innerText = "Uploaded! Use command: pm install /" + file.name;
+                        alert("File sent to Android! Open terminal inside the VM to install.");
                     };
                     reader.readAsArrayBuffer(file);
                 }
